@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>CHICLE</title>
+<style>
+  :root { --bg: #120a20; --gum: #ff7ab8; --ink: #ffe9f4; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden;
+    font-family: system-ui, sans-serif; touch-action: none; user-select: none; -webkit-user-select: none; }
+  #wrap { position: fixed; inset: 0; display: grid; place-items: center; }
+  canvas { image-rendering: pixelated; box-shadow: 0 0 0 3px #2d1846, 0 20px 60px rgba(0,0,0,.6);
+    max-width: 100vw; max-height: 100vh; width: auto; height: auto; aspect-ratio: 960 / 528; }
+  #touch { position: fixed; left: 0; right: 0; bottom: 0; display: none; justify-content: space-between;
+    padding: 16px; pointer-events: none; }
+  #touch .grp { display: flex; gap: 12px; pointer-events: auto; }
+  #touch button { width: 68px; height: 68px; border-radius: 50%; border: 2px solid rgba(255,122,184,.6);
+    background: rgba(255,122,184,.15); color: var(--ink); font-size: 22px; font-weight: 700; }
+  #touch button.on { background: rgba(255,122,184,.5); }
+  #touch .small { width: 52px; height: 52px; font-size: 16px; align-self: center; }
+  @media (pointer: coarse) { #touch { display: flex; } }
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="game"></canvas></div>
+<div id="touch">
+  <div class="grp">
+    <button data-act="left" aria-label="Izquierda">◀</button>
+    <button data-act="right" aria-label="Derecha">▶</button>
+    <button class="small" data-act="down" aria-label="Soltar">▼</button>
+  </div>
+  <div class="grp">
+    <button class="small" data-act="restart" aria-label="Reiniciar">R</button>
+    <button data-act="bubble" aria-label="Burbuja">○</button>
+    <button data-act="jump" aria-label="Saltar">▲</button>
+  </div>
+</div>
+<script src="src/levels.js"></script>
+<script src="src/game.js"></script>
+</body>
+</html>

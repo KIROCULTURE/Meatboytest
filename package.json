@@ -1,0 +1,12 @@
+{
+  "name": "chicle",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Plataformas de precisión inspirado en la movilidad de Super Meat Boy, con mecánicas propias.",
+  "scripts": {
+    "test": "node tests/run.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.1"
+  }
+}
