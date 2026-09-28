@@ -44,17 +44,46 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => { const a = KEYMAP[e.code]; if (a) keys.delete(a); });
 addEventListener('blur', () => keys.clear());
 
-// Controles táctiles: botones con data-act.
+// Controles táctiles. Botones con data-act (multitoque: cada dedo captura su botón)
+// y una cruceta deslizable (data-pad): la dirección sale de la posición del dedo.
 const touchHeld = new Map();
+const touchSet = (act, on) => {
+  if (on && !touchHeld.get(act)) pressed.add(act);
+  touchHeld.set(act, on);
+  document.querySelectorAll(`[data-act="${act}"], [data-dir="${act}"]`).forEach(el => el.classList.toggle('on', on));
+};
 document.querySelectorAll('[data-act]').forEach(btn => {
   const act = btn.dataset.act;
-  const on = e => { e.preventDefault(); if (!touchHeld.get(act)) pressed.add(act); touchHeld.set(act, true); btn.classList.add('on'); };
-  const off = e => { e.preventDefault(); touchHeld.set(act, false); btn.classList.remove('on'); };
-  btn.addEventListener('pointerdown', on);
+  btn.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    try { btn.setPointerCapture(e.pointerId); } catch (_) { /* sin captura */ }
+    touchSet(act, true);
+  });
+  const off = e => { e.preventDefault(); touchSet(act, false); };
   btn.addEventListener('pointerup', off);
   btn.addEventListener('pointercancel', off);
-  btn.addEventListener('pointerleave', off);
+  btn.addEventListener('lostpointercapture', off);
 });
+document.querySelectorAll('[data-pad]').forEach(pad => {
+  let id = null;
+  const read = e => {
+    const r = pad.getBoundingClientRect();
+    const dx = (e.clientX - r.left) / r.width - 0.5, dy = (e.clientY - r.top) / r.height - 0.5;
+    touchSet('left', dx < -0.08);
+    touchSet('right', dx > 0.08);
+    touchSet('down', dy > 0.28 && Math.abs(dx) < 0.3);
+  };
+  const end = () => { id = null; touchSet('left', false); touchSet('right', false); touchSet('down', false); };
+  pad.addEventListener('pointerdown', e => {
+    e.preventDefault(); id = e.pointerId;
+    try { pad.setPointerCapture(id); } catch (_) { /* sin captura */ }
+    read(e);
+  });
+  pad.addEventListener('pointermove', e => { if (e.pointerId === id) read(e); });
+  pad.addEventListener('pointerup', e => { if (e.pointerId === id) end(); });
+  pad.addEventListener('pointercancel', e => { if (e.pointerId === id) end(); });
+});
+const isTouch = matchMedia('(pointer: coarse)').matches;
 
 // Mando (Gamepad API).
 let padPrev = {};
@@ -107,6 +136,10 @@ const sfx = {
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 canvas.width = W; canvas.height = H;
+// Tocar la pantalla avanza en los menús (título, nivel superado, final, pausa).
+canvas.addEventListener('pointerdown', e => {
+  if (game.mode !== 'play') { e.preventDefault(); pressed.add('jump'); }
+});
 
 const game = {
   mode: 'title',        // title | play | clear | end | pause
@@ -679,25 +712,27 @@ function drawOverlay() {
     panel([
       ['CHICLE', 72, COL.gum],
       ['Plataformas de precisión con un chicle muy pegajoso', 18, '#ffe9f4'],
-      ['← → mover · Z/Espacio saltar · X burbuja · R reiniciar', 15, '#cdb8e8'],
-      ['Mantén SALTO contra un techo para pegarte · N saltar nivel', 15, '#cdb8e8'],
-    ], 'Pulsa SALTO para empezar');
+      isTouch ? ['Cruceta: mover · ▲ saltar · ○ burbuja · ↺ reiniciar', 15, '#cdb8e8']
+              : ['← → mover · Z/Espacio saltar · X burbuja · R reiniciar', 15, '#cdb8e8'],
+      isTouch ? ['Mantén ▲ contra un techo para pegarte · ⏭ saltar nivel', 15, '#cdb8e8']
+              : ['Mantén SALTO contra un techo para pegarte · N saltar nivel', 15, '#cdb8e8'],
+    ], isTouch ? 'Toca la pantalla para empezar' : 'Pulsa SALTO para empezar');
   } else if (game.mode === 'clear') {
     const r = game.results[game.levelIndex];
     panel([
       ['¡Mordido!', 44, '#ffe36e'],
       [`${game.level.name}`, 20, '#fff'],
       [`Tiempo ${fmt(r.time)}   ·   Muertes ${r.deaths}   ·   Rango ${rank(r)}`, 18, '#ffe9f4'],
-    ], 'SALTO: siguiente nivel · R: repetir');
+    ], isTouch ? 'Toca: siguiente nivel · ↺: repetir' : 'SALTO: siguiente nivel · R: repetir');
   } else if (game.mode === 'end') {
     const tot = game.results.reduce((a, r) => a + (r ? r.time : 0), 0);
     panel([
       ['¡Te comiste todos los caramelos!', 36, '#ffe36e'],
       [`Tiempo total ${fmt(tot)}   ·   Muertes totales ${game.deaths}`, 20, '#fff'],
       [game.results.map((r, i) => `${i + 1}:${r ? rank(r) : '-'}`).join('  '), 18, '#ffb3d6'],
-    ], 'SALTO para volver a empezar');
+    ], isTouch ? 'Toca para volver a empezar' : 'SALTO para volver a empezar');
   } else if (game.mode === 'pause') {
-    panel([['Pausa', 44, '#fff']], 'Esc/P para seguir');
+    panel([['Pausa', 44, '#fff']], isTouch ? 'Toca para seguir' : 'Esc/P para seguir');
   }
 }
 

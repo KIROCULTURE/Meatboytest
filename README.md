@@ -21,7 +21,7 @@ Abre `index.html` en el navegador (no necesita servidor ni dependencias).
 | Pausa | Esc / P | Start |
 | Saltar nivel | N | — |
 
-En móvil aparecen botones táctiles.
+En móvil aparecen controles táctiles: cruceta deslizable a la izquierda, salto y burbuja a la derecha (multitoque), y pausa, reiniciar y saltar nivel. Mejor en horizontal.
 
 ## Pruebas
 

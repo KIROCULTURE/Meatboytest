@@ -2,37 +2,80 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
 <title>CHICLE</title>
 <style>
-  :root { --bg: #120a20; --gum: #ff7ab8; --ink: #ffe9f4; }
+  /* Pantalla de juego a sangre; en táctil los controles van debajo (vertical) o encima (horizontal). */
+  :root {
+    color-scheme: dark;
+    --bg: #120a20; --frame: #2d1846; --gum: #ff7ab8; --gum-soft: rgba(255,122,184,.16);
+    --gum-edge: rgba(255,122,184,.55); --gum-on: rgba(255,122,184,.55); --bubble: #bfe9ff;
+    --ink: #ffe9f4; --ink-dim: #cdb8e8;
+  }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden;
-    font-family: system-ui, sans-serif; touch-action: none; user-select: none; -webkit-user-select: none; }
-  #wrap { position: fixed; inset: 0; display: grid; place-items: center; }
-  canvas { image-rendering: pixelated; box-shadow: 0 0 0 3px #2d1846, 0 20px 60px rgba(0,0,0,.6);
-    max-width: 100vw; max-height: 100vh; width: auto; height: auto; aspect-ratio: 960 / 528; }
-  #touch { position: fixed; left: 0; right: 0; bottom: 0; display: none; justify-content: space-between;
-    padding: 16px; pointer-events: none; }
-  #touch .grp { display: flex; gap: 12px; pointer-events: auto; }
-  #touch button { width: 68px; height: 68px; border-radius: 50%; border: 2px solid rgba(255,122,184,.6);
-    background: rgba(255,122,184,.15); color: var(--ink); font-size: 22px; font-weight: 700; }
-  #touch button.on { background: rgba(255,122,184,.5); }
-  #touch .small { width: 52px; height: 52px; font-size: 16px; align-self: center; }
-  @media (pointer: coarse) { #touch { display: flex; } }
+    font-family: system-ui, sans-serif; touch-action: none; user-select: none; -webkit-user-select: none;
+    -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  #app { height: 100%; display: flex; flex-direction: column; box-sizing: border-box;
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+  #stage { flex: 1; min-height: 0; display: grid; place-items: center; padding: 8px 16px; box-sizing: border-box; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+  #touch, .rotate { display: none; }
+  .rotate { text-align: center; color: var(--ink-dim); font-size: 13px; padding: 0 16px; }
+  @media (pointer: coarse) { .rotate { display: block; } }
+  @media (pointer: coarse) {
+    #touch { display: flex; justify-content: space-between; align-items: center; gap: 16px;
+      padding: 8px 16px 20px; flex: 0 0 auto; }
+  }
+  /* Móvil en horizontal: cruceta a la izquierda y botones a la derecha, el juego en medio sin taparlo. */
+  @media (pointer: coarse) and (orientation: landscape) {
+    #stage { padding: 6px calc(150px + env(safe-area-inset-right, 0px)) 6px calc(150px + env(safe-area-inset-left, 0px)); }
+    #touch { position: fixed; inset: 0; padding: calc(10px + env(safe-area-inset-top, 0px)) calc(12px + env(safe-area-inset-right, 0px))
+      calc(14px + env(safe-area-inset-bottom, 0px)) calc(12px + env(safe-area-inset-left, 0px));
+      align-items: flex-end; pointer-events: none; }
+    #touch > * { pointer-events: auto; }
+    .sys { position: fixed; top: calc(10px + env(safe-area-inset-top, 0px)); right: calc(12px + env(safe-area-inset-right, 0px));
+      flex-direction: row; }
+    .big { width: 62px !important; height: 62px !important; }
+    .acts { gap: 10px; }
+    .pad { width: 128px !important; height: 116px !important; }
+    .rotate { display: none !important; }
+  }
+  .pad { position: relative; width: 130px; height: 120px; border-radius: 24px; flex: 0 0 auto;
+    background: var(--gum-soft); border: 2px solid var(--gum-edge); touch-action: none; }
+  .pad span { position: absolute; display: grid; place-items: center; color: var(--ink); font-size: 22px;
+    border-radius: 16px; pointer-events: none; transition: background .06s; }
+  .pad [data-dir="left"] { left: 6px; top: 6px; bottom: 34px; width: 54px; }
+  .pad [data-dir="right"] { right: 6px; top: 6px; bottom: 34px; width: 54px; }
+  .pad [data-dir="down"] { left: 50%; bottom: 4px; width: 44px; height: 26px; margin-left: -22px; font-size: 14px; }
+  .pad span.on { background: var(--gum-on); }
+  .acts { display: flex; align-items: flex-end; gap: 10px; }
+  .sys { display: flex; flex-direction: column; gap: 10px; }
+  #touch button { border-radius: 50%; border: 2px solid var(--gum-edge); background: var(--gum-soft);
+    color: var(--ink); font: 700 26px/1 system-ui, sans-serif; padding: 0; touch-action: none; }
+  #touch button.on { background: var(--gum-on); }
+  .big { width: 68px; height: 68px; }
+  .jump { margin-bottom: 26px; }
+  .bubble { border-color: var(--bubble) !important; color: var(--bubble) !important; }
+  .mini { width: 38px; height: 38px; font-size: 16px !important; color: var(--ink-dim) !important; }
 </style>
 </head>
 <body>
-<div id="wrap"><canvas id="game"></canvas></div>
-<div id="touch">
-  <div class="grp">
-    <button data-act="left" aria-label="Izquierda">◀</button>
-    <button data-act="right" aria-label="Derecha">▶</button>
-    <button class="small" data-act="down" aria-label="Soltar">▼</button>
-  </div>
-  <div class="grp">
-    <button class="small" data-act="restart" aria-label="Reiniciar">R</button>
-    <button data-act="bubble" aria-label="Burbuja">○</button>
-    <button data-act="jump" aria-label="Saltar">▲</button>
+<div id="app">
+  <div id="stage"><canvas id="game" aria-label="CHICLE"></canvas></div>
+  <p class="rotate">Gira el móvil para ver el nivel más grande.</p>
+  <div id="touch">
+    <div class="pad" data-pad aria-label="Cruceta">
+      <span data-dir="left">◀</span><span data-dir="right">▶</span><span data-dir="down">▼</span>
+    </div>
+    <div class="sys">
+      <button class="mini" data-act="pause" aria-label="Pausa">❚❚</button>
+      <button class="mini" data-act="restart" aria-label="Reiniciar nivel">↺</button>
+      <button class="mini" data-act="skip" aria-label="Saltar nivel">⏭</button>
+    </div>
+    <div class="acts">
+      <button class="big bubble" data-act="bubble" aria-label="Burbuja">○</button>
+      <button class="big jump" data-act="jump" aria-label="Saltar">▲</button>
+    </div>
   </div>
 </div>
 <script src="src/levels.js"></script>
